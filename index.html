@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
+    <title>WebRTC Sample</title>
+  </head>
+
+  <body>
+    <video id="remoteVideo" autoplay muted></video>
+    <video id="localVideo" autoplay muted></video>
+
+    <div>
+      <button id="startButton">Start</button>
+      <button id="callButton">Call</button>
+      <button id="hangupButton">Hang Up</button>
+    </div>
+
+    <script src='js/lib/adapter.js'></script>
+    <script src='js/lib/socket.io.js'></script>
+    <script src="js/bundle.js"></script>
+
+</body>
+
+</html>

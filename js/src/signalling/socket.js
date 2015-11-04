@@ -67,23 +67,8 @@ Socket.prototype = {
       room: this.room,
       candidate: candidate
     });
-  },
-
-  onReceiveSdp: function(sdp) {
-    trace('Placeholder function: Received SDP')
-  },
-
-  onGuestJoined: function() {
-    trace('Placeholder function: Guest joined room')
-  },
-
-  onReceiveICECandidate: function(candidate) {
-    trace('Placeholder function: Received ICE candidate')
-  },
-
-  onRoomFull: function(room) {
-    trace('Placeholder function: Room is full!');
   }
+
 };
 
 module.exports = Socket;

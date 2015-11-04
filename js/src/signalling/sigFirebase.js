@@ -1,5 +1,11 @@
 var Firebase = require('firebase');
 
+var actions = {
+  USER_JOIN: 'user join',
+  SEND_SDP: 'send sdp',
+  ICE_CANDIDATE: 'ice candidate'
+};
+
 var SigFirebase = function(room) {
   this.room = room;
   this.who = Date.now();
@@ -16,9 +22,8 @@ SigFirebase.prototype = {
   },
 
   connect: function() {
-    var server = new Firebase('https://fiery-heat-8434.firebaseio.com/' +
-                              this.room);
-    this.ref = server;
+    this.ref = new Firebase('https://fiery-heat-8434.firebaseio.com/' +
+                            this.room);
 
     this.ref.on('child_added', function(snapshot) {
       var data = snapshot.val();
@@ -27,11 +32,14 @@ SigFirebase.prototype = {
       if (data.who === this.who) return;
       snapshot.ref().remove();
 
-      if (data.action === 'user join') {
+      if (data.action === 'should init') {
+        console.log('should init');
+        this.push(action.USER_JOIN);
+      } else if (data.action === actions.USER_JOIN) {
         this.onUserJoin();
-      } else if (data.action === 'send sdp') {
+      } else if (data.action === actions.SEND_SDP) {
         this.onReceiveSessionDesc(data.payload);
-      } else if (data.action === 'ice candidate') {
+      } else if (data.action === actions.ICE_CANDIDATE) {
         this.onReceiveICECandidate(data.payload);
       }
 
@@ -39,15 +47,15 @@ SigFirebase.prototype = {
   },
 
   sendICECandidate: function(candidate) {
-    this.push('ice candidate', candidate);
+    this.push(actions.ICE_CANDIDATE, candidate);
   },
 
   userJoin: function() {
-    this.push('user join');
+    this.push(actions.USER_JOIN);
   },
 
   send: function(sdp) {
-    this.push('send sdp', sdp);
+    this.push(actions.SEND_SDP, sdp);
   }
 };
 

@@ -1,6 +1,6 @@
 var types = {
-  FIREBASE: 'firebase',
-  SOCKET: 'socket'
+  FIREBASE: Symbol(),
+  SOCKET: Symbol()
 };
 
 var SignallingFactory = {

@@ -3,16 +3,21 @@
   <head>
     <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1">
     <title>WebRTC Sample</title>
+    <link rel="stylesheet" href="main.css">
   </head>
 
   <body>
-    <video id="remoteVideo" autoplay muted></video>
-    <video id="localVideo" autoplay muted></video>
+    <div class="container">
+      <div class="actions">
+        <label for="room">Room</label>
+        <input type="text" id="room" placeholder="room name">
+        <button id="startButton">Call</button>
+        <button id="callButton">Answer</button>
+        <button id="hangupButton">Hang Up</button>
+      </div>
 
-    <div>
-      <button id="startButton">Start</button>
-      <button id="callButton">Call</button>
-      <button id="hangupButton">Hang Up</button>
+      <video id="remoteVideo" autoplay muted></video>
+      <video id="localVideo" autoplay muted></video>
     </div>
 
     <script src='js/lib/adapter.js'></script>

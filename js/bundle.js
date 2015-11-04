@@ -12,6 +12,7 @@ var remoteVideo = document.getElementById("remoteVideo");
 var startButton = document.getElementById("startButton");
 var callButton = document.getElementById("callButton");
 var hangupButton = document.getElementById("hangupButton");
+var roomInput = document.getElementById('room');
 
 var localPeerConnection = null;
 var servers = null;
@@ -27,15 +28,13 @@ var join = function() {
 startButton.onclick = start;
 callButton.onclick = join;
 
-// WEBRTC STUFF STARTS HERE
-// Set objects as most are currently prefixed
-window.RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection ||
-  window.webkitRTCPeerConnection || window.msRTCPeerConnection;
-window.RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription || window.msRTCSessionDescription;
-navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia ||
-  navigator.webkitGetUserMedia || navigator.msGetUserMedia;
-
 var initCall = function(caller) {
+
+  var roomName = roomInput.value;
+  if (!roomName) {
+    alert('room name required');
+    return;
+  }
 
   trace('caller initiate ' + caller);
 
@@ -56,8 +55,7 @@ var initCall = function(caller) {
     localPeerConnection.addStream(stream);
     localVideo.src = URL.createObjectURL(stream);
 
-    var signalling = Signalling.factory.make(Signalling.types.SOCKET, 'roomg');
-    signalling.connect();
+    var signalling = Signalling.factory.make(Signalling.types.SOCKET, roomName);
 
     var gotIceCandidate = function(event) {
       trace('ice candidate');
@@ -86,18 +84,11 @@ var initCall = function(caller) {
     signalling.onReceiveSessionDesc = function(sessionDesc) {
       trace('receive session desc: ' + (caller? 'caller': 'guest'));
       console.log('remote session', sessionDesc);
-      if (caller) {
-        trace('set remote with answer');
-        localPeerConnection.setRemoteDescription(new RTCSessionDescription(sessionDesc));
-      } else {
-        localPeerConnection.setRemoteDescription(new RTCSessionDescription(sessionDesc),
-          function() {
-            trace('make answer');
-            localPeerConnection.createAnswer(gotDescription, errorHandler);
-          });
-      }
+
+      localPeerConnection.setRemoteDescription(new RTCSessionDescription(sessionDesc));
       if (!caller) {
-        trace('create answer');
+        trace('make answer');
+        localPeerConnection.createAnswer(gotDescription, errorHandler);
       }
     };
 
@@ -105,7 +96,7 @@ var initCall = function(caller) {
     localPeerConnection.onicecandidate = gotIceCandidate;
     localPeerConnection.onaddstream = gotRemoteStream;
 
-    if (!caller) signalling.userJoin();
+    signalling.connect();
 
   }, errorHandler);
 
@@ -113,6 +104,12 @@ var initCall = function(caller) {
 
 },{"./signalling/signallingFactory":3}],2:[function(require,module,exports){
 var Firebase = require('firebase');
+
+var actions = {
+  USER_JOIN: 'user join',
+  SEND_SDP: 'send sdp',
+  ICE_CANDIDATE: 'ice candidate'
+};
 
 var SigFirebase = function(room) {
   this.room = room;
@@ -130,9 +127,8 @@ SigFirebase.prototype = {
   },
 
   connect: function() {
-    var server = new Firebase('https://fiery-heat-8434.firebaseio.com/' +
-                              this.room);
-    this.ref = server;
+    this.ref = new Firebase('https://fiery-heat-8434.firebaseio.com/' +
+                            this.room);
 
     this.ref.on('child_added', function(snapshot) {
       var data = snapshot.val();
@@ -141,11 +137,14 @@ SigFirebase.prototype = {
       if (data.who === this.who) return;
       snapshot.ref().remove();
 
-      if (data.action === 'user join') {
+      if (data.action === 'should init') {
+        console.log('should init');
+        this.push(action.USER_JOIN);
+      } else if (data.action === actions.USER_JOIN) {
         this.onUserJoin();
-      } else if (data.action === 'send sdp') {
+      } else if (data.action === actions.SEND_SDP) {
         this.onReceiveSessionDesc(data.payload);
-      } else if (data.action === 'ice candidate') {
+      } else if (data.action === actions.ICE_CANDIDATE) {
         this.onReceiveICECandidate(data.payload);
       }
 
@@ -153,15 +152,15 @@ SigFirebase.prototype = {
   },
 
   sendICECandidate: function(candidate) {
-    this.push('ice candidate', candidate);
+    this.push(actions.ICE_CANDIDATE, candidate);
   },
 
   userJoin: function() {
-    this.push('user join');
+    this.push(actions.USER_JOIN);
   },
 
   send: function(sdp) {
-    this.push('send sdp', sdp);
+    this.push(actions.SEND_SDP, sdp);
   }
 };
 
@@ -170,8 +169,8 @@ module.exports = SigFirebase;
 
 },{"firebase":5}],3:[function(require,module,exports){
 var types = {
-  FIREBASE: 'firebase',
-  SOCKET: 'socket'
+  FIREBASE: Symbol(),
+  SOCKET: Symbol()
 };
 
 var SignallingFactory = {
@@ -261,23 +260,8 @@ Socket.prototype = {
       room: this.room,
       candidate: candidate
     });
-  },
-
-  onReceiveSdp: function(sdp) {
-    trace('Placeholder function: Received SDP')
-  },
-
-  onGuestJoined: function() {
-    trace('Placeholder function: Guest joined room')
-  },
-
-  onReceiveICECandidate: function(candidate) {
-    trace('Placeholder function: Received ICE candidate')
-  },
-
-  onRoomFull: function(room) {
-    trace('Placeholder function: Room is full!');
   }
+
 };
 
 module.exports = Socket;

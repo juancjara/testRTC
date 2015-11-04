@@ -1,0 +1,33 @@
+body {
+  height: 100vh;
+  margin: 0;
+}
+
+.container {
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+}
+
+.actions {
+  flex: 0 1 auto;
+  margin: 10px;
+}
+
+#remoteVideo {
+  flex: 1 1 auto;
+  background-color: black;
+}
+
+#localVideo { 
+  height: 190px;
+  width: 254px;
+
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+
+  background-color: green;
+};
+
+

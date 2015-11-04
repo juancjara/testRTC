@@ -11,6 +11,7 @@ var remoteVideo = document.getElementById("remoteVideo");
 var startButton = document.getElementById("startButton");
 var callButton = document.getElementById("callButton");
 var hangupButton = document.getElementById("hangupButton");
+var roomInput = document.getElementById('room');
 
 var localPeerConnection = null;
 var servers = null;
@@ -26,15 +27,13 @@ var join = function() {
 startButton.onclick = start;
 callButton.onclick = join;
 
-// WEBRTC STUFF STARTS HERE
-// Set objects as most are currently prefixed
-window.RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection ||
-  window.webkitRTCPeerConnection || window.msRTCPeerConnection;
-window.RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription || window.msRTCSessionDescription;
-navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia ||
-  navigator.webkitGetUserMedia || navigator.msGetUserMedia;
-
 var initCall = function(caller) {
+
+  var roomName = roomInput.value;
+  if (!roomName) {
+    alert('room name required');
+    return;
+  }
 
   trace('caller initiate ' + caller);
 
@@ -55,8 +54,7 @@ var initCall = function(caller) {
     localPeerConnection.addStream(stream);
     localVideo.src = URL.createObjectURL(stream);
 
-    var signalling = Signalling.factory.make(Signalling.types.SOCKET, 'roomg');
-    signalling.connect();
+    var signalling = Signalling.factory.make(Signalling.types.SOCKET, roomName);
 
     var gotIceCandidate = function(event) {
       trace('ice candidate');
@@ -85,18 +83,11 @@ var initCall = function(caller) {
     signalling.onReceiveSessionDesc = function(sessionDesc) {
       trace('receive session desc: ' + (caller? 'caller': 'guest'));
       console.log('remote session', sessionDesc);
-      if (caller) {
-        trace('set remote with answer');
-        localPeerConnection.setRemoteDescription(new RTCSessionDescription(sessionDesc));
-      } else {
-        localPeerConnection.setRemoteDescription(new RTCSessionDescription(sessionDesc),
-          function() {
-            trace('make answer');
-            localPeerConnection.createAnswer(gotDescription, errorHandler);
-          });
-      }
+
+      localPeerConnection.setRemoteDescription(new RTCSessionDescription(sessionDesc));
       if (!caller) {
-        trace('create answer');
+        trace('make answer');
+        localPeerConnection.createAnswer(gotDescription, errorHandler);
       }
     };
 
@@ -104,7 +95,7 @@ var initCall = function(caller) {
     localPeerConnection.onicecandidate = gotIceCandidate;
     localPeerConnection.onaddstream = gotRemoteStream;
 
-    if (!caller) signalling.userJoin();
+    signalling.connect();
 
   }, errorHandler);
 
